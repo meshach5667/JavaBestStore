@@ -1,28 +1,45 @@
 package com.mesh.bestore.models;
+
 import org.springframework.web.multipart.MultipartFile;
 
-import jakarta.validation.constraints.*;
+import javax.validation.constraints.*;
+
 public class ProductDto {
- @NotEmpty(message = "Product name is required")
+
+    @NotEmpty(message = "Product name is required")
     private String name;
+
+    @NotEmpty(message = "Product brand is required")
+    private String brand;
+
     @NotEmpty(message = "Product description is required")
+    @Size(min = 10, message = "The description must be at least 10 characters long")
+    @Size(max = 200, message = "The description must not exceed 200 characters")
     private String description;
+
     @NotEmpty(message = "Product category is required")
     private String category;
-    @Min(0)
+
+    @Min(value = 0, message = "Price must be greater than or equal to 0")
     private double price;
-    @size (min = 10, messaage = "the description must be at least 10 characters long")
-    @size(max = 200, message = "the description must nnot exceed 200 characters long")
-    private String description;
 
     private MultipartFile image;
 
+    // Getters and Setters
     public String getName() {
         return name;
     }
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getBrand() {
+        return brand;
+    }
+
+    public void setBrand(String brand) {
+        this.brand = brand;
     }
 
     public String getDescription() {
@@ -49,14 +66,6 @@ public class ProductDto {
         this.price = price;
     }
 
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
     public MultipartFile getImage() {
         return image;
     }
@@ -64,8 +73,4 @@ public class ProductDto {
     public void setImage(MultipartFile image) {
         this.image = image;
     }
-
- 
-
-    
 }

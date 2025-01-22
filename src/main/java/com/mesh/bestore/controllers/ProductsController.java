@@ -1,4 +1,4 @@
-package com.controllers;
+package com.mesh.bestore.controllers;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,7 +35,7 @@ public class ProductsController {
     @GetMapping({"/", ""})
     public String showProductsList(Model model) {
         List<Products> products = productServices.findAll(Sort.by(Sort.Direction.DESC, "id"));
-        model.addAttribute("products", products);
+        model.addAttribute("products", products); 
         return "products/index";
     }
 

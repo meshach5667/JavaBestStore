@@ -3,7 +3,6 @@ Best Store is a Spring Boot application that allows users to manage products in 
 
 ## Technology used
 
-** Java Spring Framework
-** HTML
-** BootStrap
-
+ **Java Spring Framework**  
+- **HTML**  
+- **Bootstrap**

@@ -8,7 +8,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Date;
 import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
@@ -48,8 +47,7 @@ public class ProductsController {
     }
 
     @PostMapping("/create")
-    public String createProduct(
-            @Valid @ModelAttribute ProductDto productDto, BindingResult result) {
+    public String createProduct(@Valid @ModelAttribute ProductDto productDto, BindingResult result) {
         if (productDto.getImage().isEmpty()) {
             result.addError(new FieldError("productDto", "image", "Image is required"));
         }
@@ -69,12 +67,11 @@ public class ProductsController {
                 Files.createDirectories(uploadPath);
             }
             try (InputStream inputStream = image.getInputStream()) {
-                Files.copy(inputStream, uploadPath.resolve(storageFileName),
-                        StandardCopyOption.REPLACE_EXISTING);
+                Files.copy(inputStream, uploadPath.resolve(storageFileName), StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException ex) {
             System.out.println("Error saving file: " + ex.getMessage());
-            return "products/createProduct"; 
+            return "products/createProduct";
         }
 
         // Save product
@@ -87,65 +84,85 @@ public class ProductsController {
         product.setImageFileName(storageFileName);
         product.setCreated_at(createdAt);
 
-            productServices.save(product);
-            return "redirect:/products";
-        }
-
-
-        @GetMapping("/edit")
-        public String showEditPage(
-            Model model,
-            @RequestParam(name = "id") int id) {
-                try {
-                    Products product = productServices.findById(id).get();
-                    ProductDto productDto = new ProductDto();
-                    productDto.setName(product.getName());
-                    productDto.setBrand(product.getBrand());
-                    productDto.setCategory(product.getCategory());
-                    productDto.setPrice(product.getPrice());
-                    productDto.setDescription(product.getDescription());
-                    model.addAttribute("product", productDto);
-
-                }
-                catch (Exception e) {
-                    System.out.println("Exception: " + e.getMessage());
-                    return "redirect:/products";
-                }
-        
-        return "products/EditProduct";  
+        productServices.save(product);
+        return "redirect:/products";
     }
 
-       
+    @GetMapping("/edit")
+    public String showEditPage(Model model, @RequestParam(name = "id") int id) {
+        try {
+            Products product = productServices.findById(id).orElseThrow(() -> new IllegalArgumentException("Invalid product ID: " + id));
+            ProductDto productDto = new ProductDto();
+            productDto.setName(product.getName());
+            productDto.setBrand(product.getBrand());
+            productDto.setCategory(product.getCategory());
+            productDto.setPrice(product.getPrice());
+            productDto.setDescription(product.getDescription());
+            model.addAttribute("product", productDto);
+            model.addAttribute("id", id);
+        } catch (Exception e) {
+            System.out.println("Exception: " + e.getMessage());
+            return "redirect:/products";
+        }
+        return "products/editProduct";
+    }
+
     @PostMapping("/edit")
-    public String editProduct(
-        @RequestParam(name = "id") int id,
-        @Valid @ModelAttribute ProductDto productDto,
-        BindingResult result) {
-            if (result.hasErrors()) {
-                return "products/editProduct";
-            }
-            try {
-                Products product = productServices.findById(id).get();
-                product.setName(productDto.getName());
-                product.setBrand(productDto.getBrand());
-                product.setCategory(productDto.getCategory());
-                product.setPrice(productDto.getPrice());
-                product.setDescription(productDto.getDescription());
-                productServices.save(product);
-            } catch (Exception e) {
-                System.out.println("Exception: " + e.getMessage());
-            }
-            return "redirect:/products";
+    public String editProduct(@RequestParam(name = "id") int id, @Valid @ModelAttribute ProductDto productDto, BindingResult result) {
+        if (result.hasErrors()) {
+            return "products/editProduct";
         }
 
-        @GetMapping("/delete")
-        public String deleteProduct(
-            @RequestParam(name = "id") int id) {
-                try {
-                    productServices.deleteById(id);
-                } catch (Exception e) {
-                    System.out.println("Exception: " + e.getMessage());
+        try {
+            Products product = productServices.findById(id).orElseThrow(() -> new IllegalArgumentException("Invalid product ID: " + id));
+            product.setName(productDto.getName());
+            product.setBrand(productDto.getBrand());
+            product.setCategory(productDto.getCategory());
+            product.setPrice(productDto.getPrice());
+            product.setDescription(productDto.getDescription());
+
+            MultipartFile image = productDto.getImage();
+            if (!image.isEmpty()) {
+                String storageFileName = new Date().getTime() + "_" + image.getOriginalFilename();
+                String uploadDir = "public/images/";
+                Path uploadPath = Paths.get(uploadDir);
+                if (!Files.exists(uploadPath)) {
+                    Files.createDirectories(uploadPath);
                 }
-                return "redirect:/products";
+                try (InputStream inputStream = image.getInputStream()) {
+                    Files.copy(inputStream, uploadPath.resolve(storageFileName), StandardCopyOption.REPLACE_EXISTING);
+                }
+                product.setImageFileName(storageFileName);
+            }
+
+            productServices.save(product);
+        } catch (Exception e) {
+            System.out.println("Exception: " + e.getMessage());
+        }
+
+        return "redirect:/products";
     }
-}
+
+    @GetMapping("/delete")
+    public String deleteProduct(@RequestParam(name = "id") int id) {
+        try {
+            Products product = productServices.findById(id).orElseThrow(() -> new IllegalArgumentException("Invalid product ID: " + id));
+            
+            // Delete image
+            String uploadDir = "public/images/";
+            try {
+                Files.delete(Paths.get(uploadDir + product.getImageFileName()));
+            } catch (Exception e) {
+                System.out.println("Error deleting file: " + e.getMessage());
+            }
+            
+            // Delete product
+            productServices.delete(product);
+            productServices.deleteById(id);
+        } catch (Exception e) {
+            System.out.println("Exception: " + e.getMessage());
+        }
+        return "redirect:/products";
+    }
+}    
+ 
